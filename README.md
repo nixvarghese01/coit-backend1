@@ -40,8 +40,8 @@ docker run -d -p 8080:8080 -e SA_LOGIC_API_URL=http://<logic-host>:5000 <dockerh
 `SA_LOGIC_API_URL` must point to the Python logic service. When both run as containers, put them on the same Docker network and use the container name, for example `http://sa-logic:5000`.
 
 ## Branches
-- `stage`: default branch
-- `master`
+- `main`: default branch
+- `master`: older version
 
 ## Related repos
 - [coit-frontend](https://github.com/nixvarghese01/coit-frontend): React UI
