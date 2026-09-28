@@ -1,37 +1,48 @@
-## Packaging the application
-` $ mvn install`
+# coit-backend1: Sentiment Analysis Web API
 
-## Running the application
-` $ java -jar sentiment-analysis-web-0.0.1-SNAPSHOT.jar --sa.logic.api.url=http://localhost:5000 ` 
+A Spring Boot service that sits between the React frontend and the Python sentiment-analysis logic service. It accepts a sentence, forwards it to the logic API and returns the polarity.
 
-## Building the container
-` $ docker build -f Dockerfile -t $DOCKER_USER_ID/sentiment-analysis-web-app . `
+The app is a three-tier sentiment-analysis demo: you type a sentence in the web UI and it returns a polarity score.
 
-## Running the container
-``` 
-$ docker run -d -p 8080:8080 -e SA_LOGIC_API_URL='http://<container_ip or docker machine ip>:5000' $DOCKER_USER_ID/sentiment-analysis-web-app  
+```
+React frontend  --POST /sentiment-->  Spring Boot web API  --POST /analyse/sentiment-->  Python (Flask + TextBlob)
+   (nginx :80)                            (:8080)                                         (:5000)
 ```
 
-#### Native docker support needs the Container IP
-CONTAINER_IP: To forward messages to the sa-logic container we need to get  its IP. To do so execute:
+## Tech stack
+- Java 8, Spring Boot 1.5
+- Maven (wrapper included)
+- Docker (single-stage and multi-stage Dockerfiles)
 
-` $ docker container list`
+## API
+| Method | Path | Description |
+|---|---|---|
+| POST | `/sentiment` | Body `{"sentence": "..."}`. Returns `{"sentence": "...", "polarity": 0.5}` |
+| GET | `/testHealth` | Health check |
 
-Copy the id of sa-logic container and execute:
+## Build and run locally
+```bash
+./mvnw clean install
+java -jar target/sentiment-analysis-web-0.0.2-SNAPSHOT.jar --sa.logic.api.url=http://localhost:5000
+```
 
-` $ docker inspect <container_id> `
+## Docker
+```bash
+# multi-stage: builds the jar inside the image
+docker build -f Dockerfile-multistage -t <dockerhub-user>/sentiment-analysis-web-app .
 
-The Containers IP address is found under the property NetworkSettings.IPAddress, use it in the RUN command.
+# single-stage: needs the jar built first (./mvnw install)
+docker build -f Dockerfile -t <dockerhub-user>/sentiment-analysis-web-app .
 
-#### Docker Machine on a VM 
-Get Docker Machine IP by executing:
+docker run -d -p 8080:8080 -e SA_LOGIC_API_URL=http://<logic-host>:5000 <dockerhub-user>/sentiment-analysis-web-app
+```
 
-` $ docker-machine ip `
+`SA_LOGIC_API_URL` must point to the Python logic service. When both run as containers, put them on the same Docker network and use the container name, for example `http://sa-logic:5000`.
 
-Use this one in the command.
+## Branches
+- `stage`: default branch
+- `master`
 
-
-## Pushing the container
-` $ docker push $DOCKER_USER_ID/sentiment-analysis-web-app `
-
-
+## Related repos
+- [coit-frontend](https://github.com/nixvarghese01/coit-frontend): React UI
+- [coit-simple-micro-GA](https://github.com/nixvarghese01/coit-simple-micro-GA): all three services plus Kustomize and GitHub Actions CI/CD
